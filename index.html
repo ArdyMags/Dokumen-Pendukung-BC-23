@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dok Pendukung BC 23</title>
@@ -20,7 +19,6 @@
     padding: 20px 0 10px;
   }
 
-  /* TOOLBAR FREEZE */
  .toolbar {
     position: sticky;
     top: 0;
@@ -62,13 +60,8 @@
     border-color: #555;
   }
 
-  tr.hide {
-    display: none;
-  }
-
- .content-wrap {
-    padding: 20px;
-  }
+  tr.hide { display: none; }
+ .content-wrap { padding: 20px; }
 
   table {
     width: 100%;
@@ -124,6 +117,7 @@
 
 <div class="toolbar no-print">
   <button onclick="tambahBaris()">+ Tambah Data</button>
+  <button onclick="loadDataJSONP()">↻ Reload Data</button>
   <button onclick="toggleDark()">Toggle Dark Mode</button>
   <input type="text" id="searchBox" placeholder="Cari HBL, Party, Vessel..."
          onkeyup="filterTable()">
@@ -194,7 +188,6 @@ window.onload = function() {
   const keyBulan = `lastNoSuratBC23_${new Date().getMonth()}_${new Date().getFullYear()}`;
   lastNoSurat = parseInt(localStorage.getItem(keyBulan) || '0');
 
-  // RESTORE SEARCH KALAU HABIS EDIT
   let lastSearch = localStorage.getItem('lastSearchBC23');
   if (lastSearch) {
     document.getElementById('searchBox').value = lastSearch;
@@ -205,6 +198,8 @@ window.onload = function() {
 }
 
 function loadDataJSONP() {
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="10" style="text-align:center">Loading data...</td></tr>';
+
   const script = document.createElement('script');
   const callbackName = 'handleData_' + Date.now();
 
@@ -235,7 +230,6 @@ function loadDataJSONP() {
     renderTable();
     document.getElementById('jumlahData').textContent = dataTabel.length;
 
-    // APPLY FILTER KALAU ADA SEARCH TERSIMPAN
     if (document.getElementById('searchBox').value) {
       filterTable();
     }
@@ -245,6 +239,10 @@ function loadDataJSONP() {
   };
 
   script.src = API_URL + '?callback=' + callbackName;
+  script.onerror = () => {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:red">Gagal konek ke server. Cek Apps Script.</td></tr>';
+    delete window[callbackName];
+  };
   document.body.appendChild(script);
 }
 
@@ -290,7 +288,7 @@ function renderTable() {
           onchange="updateData(${idx}, 'invPL', this.value)"></td>
       <td class="no-print">
         ${row.isEditing
-       ? `<button class="btn-action btn-save" onclick="saveRow(${idx})">Save</button>`
+      ? `<button class="btn-action btn-save" onclick="saveRow(${idx})">Save</button>`
          : `<button class="btn-action btn-edit" onclick="editRow(${idx})">Edit</button>`
         }
         <button class="btn-action btn-print" onclick="printRow(${idx})">Print</button>
@@ -305,7 +303,6 @@ function updateData(idx, field, value) {
 }
 
 function editRow(idx) {
-  // SIMPEN KEYWORD SEARCH SEBELUM EDIT
   let keyword = document.getElementById('searchBox').value;
   if (keyword) {
     localStorage.setItem('lastSearchBC23', keyword);
@@ -313,15 +310,13 @@ function editRow(idx) {
 
   dataTabel[idx].isEditing = true;
   renderTable();
-  filterTable(); // Tetap apply filter
+  filterTable();
 }
 
 function saveRow(idx) {
   dataTabel[idx].isEditing = false;
   renderTable();
   filterTable();
-
-  // KIRIM KE SHEET
   saveToSheetJSONP(idx);
 }
 
@@ -330,7 +325,6 @@ function saveToSheetJSONP(idx) {
   const script = document.createElement('script');
   const callbackName = 'saveCB_' + Date.now();
 
-  // Cek ini data baru atau edit: kalau noSurat kosong + hblNo ada = data baru
   const isNewData =!row.noSurat && row.hblNo;
   const action = isNewData? 'addRow' : 'updateData';
 
@@ -339,19 +333,23 @@ function saveToSheetJSONP(idx) {
     return;
   }
 
+  document.body.style.cursor = 'wait';
+
   window[callbackName] = function(res) {
+    document.body.style.cursor = 'default';
     if(res.success) {
       alert(isNewData? 'Data baru berhasil ditambah!' : 'Data berhasil diupdate!');
-      loadDataJSONP(); // Reload data biar fresh
+      loadDataJSONP();
     } else {
       alert('Gagal: ' + res.error);
+      renderTable();
     }
     document.body.removeChild(script);
     delete window[callbackName];
   };
 
   const params = new URLSearchParams({
-    action: action, // 'addRow' atau 'updateData'
+    action: action,
     hblNo: row.hblNo,
     noAju: row.noAju,
     tglAju: row.tglAju,
@@ -364,6 +362,12 @@ function saveToSheetJSONP(idx) {
   });
 
   script.src = `${API_URL}?${params.toString()}`;
+  script.onerror = () => {
+    document.body.style.cursor = 'default';
+    alert('Gagal konek ke server');
+    renderTable();
+    delete window[callbackName];
+  };
   document.body.appendChild(script);
 }
 
@@ -449,7 +453,6 @@ function printFormatSurat(data) {
     day: 'numeric', month: 'long', year: 'numeric'
   });
 
-  // 1. Bikin container khusus print
   let printDiv = document.getElementById('printArea');
   if (!printDiv) {
     printDiv = document.createElement('div');
@@ -457,44 +460,39 @@ function printFormatSurat(data) {
     document.body.appendChild(printDiv);
   }
 
-  // 2. Isi HTML suratnya
   printDiv.innerHTML = `
     <style>
-      @media screen {
-        #printArea { display: none; }
-      }
+      @media screen { #printArea { display: none; } }
       @media print {
         body * { visibility: hidden; }
         #printArea, #printArea * { visibility: visible; }
-        #printArea { 
-          position: absolute; 
-          left: 0; 
-          top: 0; 
+        #printArea {
+          position: absolute;
+          left: 0;
+          top: 0;
           width: 100%;
           background: white;
           padding: 40px;
         }
-        .no-print { display: none !important; }
-        .page-break { page-break-after: always; }
+       .page-break { page-break-after: always; }
       }
-      .kop-surat { height: 120px; margin-bottom: 20px; }
-      .font-judul1 { font-size: 18pt; }
-      .font-judul2 { font-size: 14pt; }
-      .font-judul3 { font-size: 13pt; }
-      .font-judul4 { font-size: 11pt; }
-      .font-no-surat { font-size: 12pt; }
-      .font-normal1 { font-size: 12pt; }
-      .font-normal2 { font-size: 11pt; }
-      .font-kecil { font-size: 10pt; }
-      .center { text-align: center; }
-      .title { font-weight: bold; text-decoration: underline; margin: 10px 0; }
-      .title1 { text-decoration: underline; margin: 10px 0; }
+     .kop-surat { height: 120px; margin-bottom: 20px; }
+     .font-judul1 { font-size: 18pt; }
+     .font-judul2 { font-size: 14pt; }
+     .font-judul3 { font-size: 13pt; }
+     .font-judul4 { font-size: 11pt; }
+     .font-no-surat { font-size: 12pt; }
+     .font-normal1 { font-size: 12pt; }
+     .font-normal2 { font-size: 11pt; }
+     .font-kecil { font-size: 10pt; }
+     .center { text-align: center; }
+     .title { font-weight: bold; text-decoration: underline; margin: 10px 0; }
+     .title1 { text-decoration: underline; margin: 10px 0; }
       table { width: 100%; margin: 5px 0; border-collapse: collapse; }
       td { padding: 1px 0; vertical-align: top; }
-      .label { width: 180px; }
+     .label { width: 180px; }
     </style>
 
-    <!-- HALAMAN 1: SURAT TUGAS -->
     <div class="kop-surat"></div>
     <div class="center">
       <div class="title font-judul1">SURAT TUGAS</div>
@@ -546,8 +544,7 @@ function printFormatSurat(data) {
       </tr>
     </table>
     <div class="page-break"></div>
-    
-    <!-- HALAMAN 2: SURAT KUASA -->
+
     <div class="kop-surat"></div>
     <div class="center">
       <div class="title font-judul2">SURAT KUASA</div>
@@ -645,8 +642,7 @@ function printFormatSurat(data) {
       </table>
     </div>
     <div class="page-break"></div>
-    
-    <!-- HALAMAN 3: SURAT PERNYATAAN -->
+
     <div class="kop-surat"></div>
     <div class="center">
       <div class="title font-judul4">SURAT PERNYATAAN</div>
@@ -684,12 +680,18 @@ function printFormatSurat(data) {
     <div style="text-align: left; margin-top: 100px; text-decoration: underline;" class="font-kecil">(MOCHAMAD EKO NUGROHO)</div>
   `;
 
-  // 3. Tunggu bentar biar DOM ke-render, baru print
   setTimeout(() => {
     window.print();
-    // Abis print, hapus div-nya biar ga ganggu
     setTimeout(() => {
       if (printDiv) printDiv.remove();
     }, 500);
   }, 300);
 }
+
+function toggleDark() {
+  document.body.classList.toggle('dark-mode');
+}
+</script>
+
+</body>
+</html>
