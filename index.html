@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dok Pendukung BC 23</title>
@@ -448,257 +449,247 @@ function printFormatSurat(data) {
     day: 'numeric', month: 'long', year: 'numeric'
   });
 
-  let win = window.open('', '_blank');
-  win.document.write(`
-    <html>
-    <head>
-      <title>Print Dokumen - ${data.noSurat}</title>
-      <style>
-        body {
-          font-family: 'Times New Roman', serif;
-          padding: 40px;
-          line-height: 1;
-        }
-       .kop-surat {
-          height: 120px;
-          margin-bottom: 20px;
-        }
-       .font-judul1 { font-size: 18pt; }
-       .font-judul2 { font-size: 14pt; }
-       .font-judul3 { font-size: 13pt; }
-       .font-judul4 { font-size: 11pt; }
-       .font-no-surat { font-size: 12pt; }
-       .font-normal1 { font-size: 12pt; }
-       .font-normal2 { font-size: 11pt; }
-       .font-kecil { font-size: 10pt; }
-       .page-break { page-break-after: always; }
-       .center { text-align: center; }
-       .title {
-          font-weight: bold;
-          text-decoration: underline;
-          margin: 10px 0;
-        }
-       .title1 {
-          text-decoration: underline;
-          margin: 10px 0;
-        }
-        table {
+  // 1. Bikin container khusus print
+  let printDiv = document.getElementById('printArea');
+  if (!printDiv) {
+    printDiv = document.createElement('div');
+    printDiv.id = 'printArea';
+    document.body.appendChild(printDiv);
+  }
+
+  // 2. Isi HTML suratnya
+  printDiv.innerHTML = `
+    <style>
+      @media screen {
+        #printArea { display: none; }
+      }
+      @media print {
+        body * { visibility: hidden; }
+        #printArea, #printArea * { visibility: visible; }
+        #printArea { 
+          position: absolute; 
+          left: 0; 
+          top: 0; 
           width: 100%;
-          margin: 5px 0;
-          border-collapse: collapse;
+          background: white;
+          padding: 40px;
         }
-        td {
-          padding: 1px 0;
-          vertical-align: top;
-        }
-       .label { width: 180px; }
-        @media print {
-         .no-print { display: none; }
-          body { padding: 20px; }
-        }
-      </style>
-    </head>
-    <body class="font-normal">
-      <!-- HALAMAN 1: SURAT TUGAS -->
-      <div class="kop-surat"></div>
-      <div class="center">
-        <div class="title font-judul1">SURAT TUGAS</div>
-        <div class="title1 font-judul3">PELAKSANAAN PENGURUSAN DOKUMEN DAN BARANG IMPOR/EKSPOR</div>
-        <div class="font-no-surat">${data.noSurat}</div>
-      </div>
+        .no-print { display: none !important; }
+        .page-break { page-break-after: always; }
+      }
+      .kop-surat { height: 120px; margin-bottom: 20px; }
+      .font-judul1 { font-size: 18pt; }
+      .font-judul2 { font-size: 14pt; }
+      .font-judul3 { font-size: 13pt; }
+      .font-judul4 { font-size: 11pt; }
+      .font-no-surat { font-size: 12pt; }
+      .font-normal1 { font-size: 12pt; }
+      .font-normal2 { font-size: 11pt; }
+      .font-kecil { font-size: 10pt; }
+      .center { text-align: center; }
+      .title { font-weight: bold; text-decoration: underline; margin: 10px 0; }
+      .title1 { text-decoration: underline; margin: 10px 0; }
+      table { width: 100%; margin: 5px 0; border-collapse: collapse; }
+      td { padding: 1px 0; vertical-align: top; }
+      .label { width: 180px; }
+    </style>
+
+    <!-- HALAMAN 1: SURAT TUGAS -->
+    <div class="kop-surat"></div>
+    <div class="center">
+      <div class="title font-judul1">SURAT TUGAS</div>
+      <div class="title1 font-judul3">PELAKSANAAN PENGURUSAN DOKUMEN DAN BARANG IMPOR/EKSPOR</div>
+      <div class="font-no-surat">${data.noSurat}</div>
+    </div>
+    <br><br>
+    <div class="font-normal2">Kami yang bertanda tangan dibawah ini :</div>
+    <table class="font-normal2">
+      <tr><td class="label">Nama</td><td>: JUNUS JONAS</td></tr>
+      <tr><td class="label">PPJK</td><td>: PT. LX PANTOS INDONESIA</td></tr>
+      <tr><td class="label">No. Sertifikat PPJK</td><td>: 6004/DAK/BC/2010</td></tr>
+      <tr><td class="label">Alamat</td><td>: KAWASAN INDUSTRI MM2100 BLOK G-1 CIKARANG<br>&nbsp;&nbsp;BARAT, BEKASI - 17520</td></tr>
+    </table>
+    <br>
+    <div class="font-normal2">Adalah sebagai Pihak Pertama yang mana memberi tugas kepada :</div>
+    <table class="font-normal2">
+      <tr><td class="label">Nama</td><td>: DJUNAEDI</td></tr>
+      <tr><td class="label">Jabatan</td><td>: Operational</td></tr>
+      <tr><td class="label">Perusahaan</td><td>: PT. LX PANTOS INDONESIA</td></tr>
+    </table>
+    <br>
+    <div class="font-normal2">Akan melaksanakan pengurusan dan / atau pada kantor pelayanan bea dan cukai yang bersangkutan atas impor / ekspor barang tersebut dibawah ini :</div>
+    <table class="font-normal2">
+      <tr><td class="label">Mother Vessel</td><td>: ${data.motherVessel || '-'}</td></tr>
+      <tr><td class="label">M B/L No.</td><td>: ${data.mbl || '-'}</td></tr>
+      <tr><td class="label">HBL</td><td>: ${data.hblNo || '-'}</td></tr>
+      <tr><td class="label">Party</td><td>: ${data.party || '-'}</td></tr>
+      <tr><td class="label">Jenis Barang</td><td>: ${data.jnsBrg || '-'}</td></tr>
+      <tr><td class="label">Nama Importir/Eksportir</td><td>: PT. LG Electronics Indonesia</td></tr>
+      <tr><td class="label">No Dok BC2.3 & Tanggal</td><td>: 150323-029551-${formatTglAju(data.tglAju)}-${String(data.noAju || '0').padStart(6, '0')} Tanggal ${data.tglAju || '-'} </td></tr>
+    </table>
+    <br>
+    <div class="font-normal2">Demikianlah surat tugas ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya dan sebaik-baiknya. Atas bantuan dan kerjasamanya kami ucapkan terima kasih</div>
+    <br><br>
+    <div style="text-align: left" class="font-normal2">Tangerang, ${tglPrint}</div>
+    <table class="font-normal" style="width:100%;">
+      <tr>
+        <td style="width:50%; text-align:left; vertical-align:top;">
+          Pemberi Tugas,
+          <div style="margin-top:100px; text-decoration:underline;">(JUNUS JONAS)</div>
+          <div>PPJK PT. LX Pantos Indonesia</div>
+        </td>
+        <td style="width:50%; text-align:center; vertical-align:top;">
+          Penerima Tugas
+          <div style="margin-top:100px; text-decoration:underline;">( Operational )</div>
+          <div>&nbsp;</div>
+        </td>
+      </tr>
+    </table>
+    <div class="page-break"></div>
+    
+    <!-- HALAMAN 2: SURAT KUASA -->
+    <div class="kop-surat"></div>
+    <div class="center">
+      <div class="title font-judul2">SURAT KUASA</div>
+    </div>
+    <br><br>
+    <div class="font-normal1">
+      Yang bertanda tangan dibawah ini :
       <br><br>
-      <div class="font-normal2">Kami yang bertanda tangan dibawah ini :</div>
-      <table class="font-normal2">
-        <tr><td class="label">Nama</td><td>: JUNUS JONAS</td></tr>
-        <tr><td class="label">PPJK</td><td>: PT. LX PANTOS INDONESIA</td></tr>
-        <tr><td class="label">No. Sertifikat PPJK</td><td>: 6004/DAK/BC/2010</td></tr>
-        <tr><td class="label">Alamat</td><td>: KAWASAN INDUSTRI MM2100 BLOK G-1 CIKARANG<br>&nbsp;&nbsp;BARAT, BEKASI - 17520</td></tr>
+      <table class="font-normal" style="margin-left:0">
+        <tr>
+          <td style="width: 20px; vertical-align: top;">1.</td>
+          <td style="width: 80px;">Nama</td>
+          <td style="width: 10px;">:</td>
+          <td>MOCHAMAD EKO NUGROHO</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>Alamat</td>
+          <td>:</td>
+          <td>PT. LG Electronics Indonesia</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>Jl.H Tabri No 1. Ds Cirarab Legok Tangerang Banten</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>Indonesia.</td>
+        </tr>
       </table>
       <br>
-      <div class="font-normal2">Adalah sebagai Pihak Pertama yang mana memberi tugas kepada :</div>
-      <table class="font-normal2">
-        <tr><td class="label">Nama</td><td>: DJUNAEDI</td></tr>
-        <tr><td class="label">Jabatan</td><td>: Operational</td></tr>
-        <tr><td class="label">Perusahaan</td><td>: PT. LX PANTOS INDONESIA</td></tr>
+      Selanjutnya disebut Pihak Pertama ( I ).
+      <br><br>
+      <table class="font-normal" style="margin-left:0">
+        <tr>
+          <td style="width: 20px; vertical-align: top;">2.</td>
+          <td style="width: 80px;">Nama</td>
+          <td style="width: 10px;">:</td>
+          <td>JUNUS JONAS</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>Jabatan</td>
+          <td>:</td>
+          <td>PPJK PT. LX Pantos Indonesia</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>Alamat</td>
+          <td>:</td>
+          <td>PT. LX Pantos Indonesia</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>Kawasan Industri MM2100 Blok G-1</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>Ganda Mekar, Cikarang Barat Bekasi 17520 Indonesia</td>
+        </tr>
       </table>
       <br>
-      <div class="font-normal2">Akan melaksanakan pengurusan dan / atau pada kantor pelayanan bea dan cukai yang bersangkutan atas impor / ekspor barang tersebut dibawah ini :</div>
-      <table class="font-normal2">
-        <tr><td class="label">Mother Vessel</td><td>: ${data.motherVessel || '-'}</td></tr>
-        <tr><td class="label">M B/L No.</td><td>: ${data.mbl || '-'}</td></tr>
-        <tr><td class="label">HBL</td><td>: ${data.hblNo || '-'}</td></tr>
-        <tr><td class="label">Party</td><td>: ${data.party || '-'}</td></tr>
+      Selanjutnya disebut Pihak Kedua ( II ).
+      <br><br>
+      Dengan ini pihak pertama memberi kuasa kepada pihak kedua untuk menyelesaikan pengurusan kepabeanan atas barang import, dengan data sebagai berikut :
+      <table class="font-normal1">
         <tr><td class="label">Jenis Barang</td><td>: ${data.jnsBrg || '-'}</td></tr>
-        <tr><td class="label">Nama Importir/Eksportir</td><td>: PT. LG Electronics Indonesia</td></tr>
-        <tr><td class="label">No Dok BC2.3 & Tanggal</td><td>: 150323-029551-${formatTglAju(data.tglAju)}-${String(data.noAju || '0').padStart(6, '0')} Tanggal ${data.tglAju || '-'} </td></tr>
+        <tr><td class="label">No.MBL/HBL</td><td>: ${data.mbl || '-'} / ${data.hblNo || '-'}</td></tr>
+        <tr><td class="label">Invoice/Packing List</td><td>: ${data.invPL || '-'}</td></tr>
       </table>
       <br>
-      <div class="font-normal2">Demikianlah surat tugas ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya dan sebaik-baiknya. Atas bantuan dan kerjasamanya kami ucapkan terima kasih</div>
-      <br>
-      <br>
-      <div style="text-align: left" class="font-normal2">Tangerang, ${tglPrint}</div>
-      <table class="font-normal" style="width:100%;">
+      Demikian Surat Kuasa ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya, dengan ketentuan bila terdapat pelanggaran kepabeanan dalam pemasukan barang dan dokumen impor tersebut, maka pihak pertama bertanggungjawab atas segala akibat hukum yang timbul sesuai dengan perundangan yang berlaku.
+      <br><br>
+      <div style="text-align: left" class="font-normal1">Tangerang, ${tglPrint}</div>
+      <table class="font-normal1" style="width:100%; border:0;">
         <tr>
           <td style="width:50%; text-align:left; vertical-align:top;">
-            Pemberi Tugas,
-            <div style="margin-top:100px; text-decoration:underline;">(JUNUS JONAS)</div>
-            <div>PPJK PT. LX Pantos Indonesia</div>
+            Penerima Kuasa
+            <div style="margin-top:120px; text-decoration:underline;">(JUNUS JONAS)</div>
           </td>
           <td style="width:50%; text-align:center; vertical-align:top;">
-            Penerima Tugas
-            <div style="margin-top:100px; text-decoration:underline;">( Operational )</div>
-            <div>&nbsp;</div>
+            Pemberi Kuasa,<br>
+            Divisi Ekspor – Impor
+            <div style="margin-top:100px; text-decoration:underline;">(MOCHAMAD EKO NUGROHO)</div>
           </td>
         </tr>
       </table>
-      <div class="page-break"></div>
-      <!-- HALAMAN 2: SURAT KUASA -->
-      <div class="kop-surat"></div>
-      <div class="center">
-        <div class="title font-judul2">SURAT KUASA</div>
-      </div>
-      <br><br>
-      <div class="font-normal1">
-        <div class="font-normal">
-          Yang bertanda tangan dibawah ini :
-          <br><br>
-          <table class="font-normal" style="margin-left:0">
-            <tr>
-              <td style="width: 20px; vertical-align: top;">1.</td>
-              <td style="width: 80px;">Nama</td>
-              <td style="width: 10px;">:</td>
-              <td>MOCHAMAD EKO NUGROHO</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td>Alamat</td>
-              <td>:</td>
-              <td>PT. LG Electronics Indonesia</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td>Jl.H Tabri No 1. Ds Cirarab Legok Tangerang Banten</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td>Indonesia.</td>
-            </tr>
-          </table>
-          <br>
-          Selanjutnya disebut Pihak Pertama ( I ).
-          <br><br>
-          <table class="font-normal" style="margin-left:0">
-            <tr>
-              <td style="width: 20px; vertical-align: top;">2.</td>
-              <td style="width: 80px;">Nama</td>
-              <td style="width: 10px;">:</td>
-              <td>JUNUS JONAS</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td>Jabatan</td>
-              <td>:</td>
-              <td>PPJK PT. LX Pantos Indonesia</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td>Alamat</td>
-              <td>:</td>
-              <td>PT. LX Pantos Indonesia</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td>Kawasan Industri MM2100 Blok G-1</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td>Ganda Mekar, Cikarang Barat Bekasi 17520 Indonesia</td>
-            </tr>
-          </table>
-          <br>
-          Selanjutnya disebut Pihak Kedua ( II ).
-        </div>
-        <br>
-        <div class="font-normal1">Dengan ini pihak pertama memberi kuasa kepada pihak kedua untuk menyelesaikan pengurusan kepabeanan atas barang import, dengan data sebagai berikut :</div>
-        <table class="font-normal1">
-          <tr><td class="label">Jenis Barang</td><td>: ${data.jnsBrg || '-'}</td></tr>
-          <tr><td class="label">No.MBL/HBL</td><td>: ${data.mbl || '-'} / ${data.hblNo || '-'}</td></tr>
-          <tr><td class="label">Invoice/Packing List</td><td>: ${data.invPL || '-'}</td></tr>
-        </table>
-        <br>
-        <div class="font-normal1">Demikian Surat Kuasa ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya, dengan ketentuan bila terdapat pelanggaran kepabeanan dalam pemasukan barang dan dokumen impor tersebut, maka pihak pertama bertanggungjawab atas segala akibat hukum yang timbul sesuai dengan perundangan yang berlaku.</div>
-        <br>
-        <br>
-        <div style="text-align: left" class="font-normal1">Tangerang, ${tglPrint}</div>
-        <table class="font-normal1" style="width:100%; border:0;">
-          <tr>
-            <td style="width:50%; text-align:left; vertical-align:top;">
-              Penerima Kuasa
-              <div style="margin-top:120px; text-decoration:underline;">(JUNUS JONAS)</div>
-            </td>
-            <td style="width:50%; text-align:center; vertical-align:top;">
-              Pemberi Kuasa,<br>
-              Divisi Ekspor – Impor
-              <div style="margin-top:100px; text-decoration:underline;">(MOCHAMAD EKO NUGROHO)</div>
-            </td>
-          </tr>
-        </table>
-      </div>
-      <div class="page-break"></div>
-      <!-- HALAMAN 3: SURAT PERNYATAAN -->
-      <div class="kop-surat"></div>
-      <div class="center">
-        <div class="title font-judul4">SURAT PERNYATAAN</div>
-      </div>
-      <br><br>
-      <div class="font-kecil">Yang bertanda tangan dibawah :</div>
-      <table class="font-kecil">
-        <tr><td class="label">Nama</td><td>: MOCHAMAD EKO NUGROHO</td></tr>
-        <tr><td class="label">Jabatan</td><td>: Kuasa Direksi</td></tr>
-      </table>
-      <br>
-      <div class="font-kecil">Berdasarkan Akta Notaris nomor 10 tahun 1999 yang dibuat dihadapan Refizal, SH Notaris di Jakarta sesuai Menkeh No. C-155 97 HT-01-04 Th. 1999. tgl 08/6/1999, dalam hal ini bertindak untuk dan atas nama :</div>
-      <table class="font-kecil">
-        <tr><td class="label">Nama Perusahaan</td><td>: PT. LG Electronics Indonesia</td></tr>
-        <tr><td class="label">NPWP</td><td>: 01.069.323.2-092.000</td></tr>
-        <tr><td class="label">Alamat</td><td>: Gandaria 8 office tower lt. 29 BC & 31 ABCD,</td></tr>
-        <tr><td></td><td>&nbsp;&nbsp;Jl. Sultan iskandar muda, Kebayoran Lama Utara,</td></tr>
-        <tr><td></td><td>&nbsp;&nbsp;Kebayoran Lama,Jakarta Selatan.</td></tr>
-      </table>
-      <br>
-      <div class="font-kecil">Sehubungan dengan kewajiban untuk menyerahkan Asli Dokumen Pelengkap Pabean sebagaimana diatur dalam Keputusan Direktur Jenderal Bea dan Cukai Nomor KEP-07/BC/2003 tentang Petunjuk Pelaksanaan Tatalaksana Kepabeanan di bidang Import sebagaimana telah diu bah dengan keputusan Direktur Jenderal Bea dan Cukai Nomor KEP-68/BC/2003, menyatakan dan menjamin kebenaran hal-hal sebagai berikut :</div>
-      <div class="font-kecil">1. &nbsp;&nbsp;Bahwa dalam melakukan kegiatan import, terdapat dokumen Invoice, Packing List ${data.invPL || '-'}, Bill of Lading ${data.hblNo || '-'} dikeluarkan oleh pihak-pihak yang berwenang mengeluar kan dokumen tersebut yang dikirim melalui mdia elektronik dan dicetak oleh PT. LG Electronics Indonesia.</div>
-      <div class="font-kecil">2. &nbsp;&nbsp;Dokumen sebagaimana dimaksud dalam butir 1 yang diberitahukan oleh PT. LG Electronics Indonesia sebagai dokumen pelengkap Pabean.</div>
-      <div class="font-kecil" style="margin-left: 20px">a. &nbsp;&nbsp;Bukan merupakan dokumen yang dihasilkan dari mesin fotocopy atau faksimili</div>
-      <div class="font-kecil" style="margin-left: 20px">b. &nbsp;&nbsp;Merupakan dokumen resmi perusahaan yang diakui kebenarannya dan mengikat baik secara administrative maupun hukum antara PT. LG Electronics Indonesia dengan pihak yang mengeluarkan dokumen.</div>
-      <div class="font-kecil" style="margin-left: 20px">c. &nbsp;&nbsp;Diakui sebagai dokumen asli sebagaimana disyaratkan dalam lampiran II, III, dan IV KEP-07/BC/2003 apabila telah ditandai/dibubuhi stempel 'ASLI' disertai stempel perusahaan PT. LG Electronics Indonesia.</div>
-      <div class="font-kecil" style="margin-left: 20px">d. &nbsp;&nbsp;Merupakan alat bukti yang sah dalam proses peradilan di seluruh wilayah hukum Republik Indonesia dalam hal terjadi proses hukum antara Direktorat Jenderal Bea dan Cukai dan PT. LG Electronics Indonesia.</div>
-      <br>
-      <div class="font-kecil">Surat pernyataan ini berlaku sejak tanggal yang tertera dalam Surat Pernyataan ini dan berakhir pada saat PT. LG Electronics Indonesia mengadakan perubahan / pencabutan atas Surat Pernyataan ini.</div>
-      <br>
-      <div class="font-kecil">Demikian surat pernyataan ini dibuat dan diserahkan secara terpusat kepada Direktur Jenderal Bea dan Cukai u.b. Direktur Teknis Kepabeanan Direktorat Jenderal Bea dan Cukai berlaku di seluruh wilayah Negara Republik Indonesia (Kepada Kepala Kantor Pelayanan Bea dan Cukai KPU Tanjung Priok) untuk dipergunakan sebagaimana mestinya.</div>
-      <br>
-      <div style="text-align: left" class="font-kecil">Tangerang, ${tglPrint}</div>
-      <div style="text-align: left;" class="font-kecil">Hormat kami,</div>
-      <div style="text-align: left; margin-top: 100px; text-decoration: underline;" class="font-kecil">(MOCHAMAD EKO NUGROHO)</div>
-      <button class="no-print" onclick="window.print()" style="margin-top:30px;padding:10px 20px">Print Semua Dokumen</button>
-    </body>
-    </html>
-  `);
-  win.document.close();
-}
+    </div>
+    <div class="page-break"></div>
+    
+    <!-- HALAMAN 3: SURAT PERNYATAAN -->
+    <div class="kop-surat"></div>
+    <div class="center">
+      <div class="title font-judul4">SURAT PERNYATAAN</div>
+    </div>
+    <br><br>
+    <div class="font-kecil">Yang bertanda tangan dibawah :</div>
+    <table class="font-kecil">
+      <tr><td class="label">Nama</td><td>: MOCHAMAD EKO NUGROHO</td></tr>
+      <tr><td class="label">Jabatan</td><td>: Kuasa Direksi</td></tr>
+    </table>
+    <br>
+    <div class="font-kecil">Berdasarkan Akta Notaris nomor 10 tahun 1999 yang dibuat dihadapan Refizal, SH Notaris di Jakarta sesuai Menkeh No. C-155 97 HT-01-04 Th. 1999. tgl 08/6/1999, dalam hal ini bertindak untuk dan atas nama :</div>
+    <table class="font-kecil">
+      <tr><td class="label">Nama Perusahaan</td><td>: PT. LG Electronics Indonesia</td></tr>
+      <tr><td class="label">NPWP</td><td>: 01.069.323.2-092.000</td></tr>
+      <tr><td class="label">Alamat</td><td>: Gandaria 8 office tower lt. 29 BC & 31 ABCD,</td></tr>
+      <tr><td></td><td>&nbsp;&nbsp;Jl. Sultan iskandar muda, Kebayoran Lama Utara,</td></tr>
+      <tr><td></td><td>&nbsp;&nbsp;Kebayoran Lama,Jakarta Selatan.</td></tr>
+    </table>
+    <br>
+    <div class="font-kecil">Sehubungan dengan kewajiban untuk menyerahkan Asli Dokumen Pelengkap Pabean sebagaimana diatur dalam Keputusan Direktur Jenderal Bea dan Cukai Nomor KEP-07/BC/2003 tentang Petunjuk Pelaksanaan Tatalaksana Kepabeanan di bidang Import sebagaimana telah diu bah dengan keputusan Direktur Jenderal Bea dan Cukai Nomor KEP-68/BC/2003, menyatakan dan menjamin kebenaran hal-hal sebagai berikut :</div>
+    <div class="font-kecil">1. &nbsp;&nbsp;Bahwa dalam melakukan kegiatan import, terdapat dokumen Invoice, Packing List ${data.invPL || '-'}, Bill of Lading ${data.hblNo || '-'} dikeluarkan oleh pihak-pihak yang berwenang mengeluar kan dokumen tersebut yang dikirim melalui mdia elektronik dan dicetak oleh PT. LG Electronics Indonesia.</div>
+    <div class="font-kecil">2. &nbsp;&nbsp;Dokumen sebagaimana dimaksud dalam butir 1 yang diberitahukan oleh PT. LG Electronics Indonesia sebagai dokumen pelengkap Pabean.</div>
+    <div class="font-kecil" style="margin-left: 20px">a. &nbsp;&nbsp;Bukan merupakan dokumen yang dihasilkan dari mesin fotocopy atau faksimili</div>
+    <div class="font-kecil" style="margin-left: 20px">b. &nbsp;&nbsp;Merupakan dokumen resmi perusahaan yang diakui kebenarannya dan mengikat baik secara administrative maupun hukum antara PT. LG Electronics Indonesia dengan pihak yang mengeluarkan dokumen.</div>
+    <div class="font-kecil" style="margin-left: 20px">c. &nbsp;&nbsp;Diakui sebagai dokumen asli sebagaimana disyaratkan dalam lampiran II, III, dan IV KEP-07/BC/2003 apabila telah ditandai/dibubuhi stempel 'ASLI' disertai stempel perusahaan PT. LG Electronics Indonesia.</div>
+    <div class="font-kecil" style="margin-left: 20px">d. &nbsp;&nbsp;Merupakan alat bukti yang sah dalam proses peradilan di seluruh wilayah hukum Republik Indonesia dalam hal terjadi proses hukum antara Direktorat Jenderal Bea dan Cukai dan PT. LG Electronics Indonesia.</div>
+    <br>
+    <div class="font-kecil">Surat pernyataan ini berlaku sejak tanggal yang tertera dalam Surat Pernyataan ini dan berakhir pada saat PT. LG Electronics Indonesia mengadakan perubahan / pencabutan atas Surat Pernyataan ini.</div>
+    <br>
+    <div class="font-kecil">Demikian surat pernyataan ini dibuat dan diserahkan secara terpusat kepada Direktur Jenderal Bea dan Cukai u.b. Direktur Teknis Kepabeanan Direktorat Jenderal Bea dan Cukai berlaku di seluruh wilayah Negara Republik Indonesia (Kepada Kepala Kantor Pelayanan Bea dan Cukai KPU Tanjung Priok) untuk dipergunakan sebagaimana mestinya.</div>
+    <br>
+    <div style="text-align: left" class="font-kecil">Tangerang, ${tglPrint}</div>
+    <div style="text-align: left;" class="font-kecil">Hormat kami,</div>
+    <div style="text-align: left; margin-top: 100px; text-decoration: underline;" class="font-kecil">(MOCHAMAD EKO NUGROHO)</div>
+  `;
 
-function toggleDark() {
-  document.body.classList.toggle('dark-mode');
+  // 3. Tunggu bentar biar DOM ke-render, baru print
+  setTimeout(() => {
+    window.print();
+    // Abis print, hapus div-nya biar ga ganggu
+    setTimeout(() => {
+      if (printDiv) printDiv.remove();
+    }, 500);
+  }, 300);
 }
-</script>
-</body>
-</html>
