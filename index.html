@@ -464,42 +464,51 @@ function printFormatSurat(data) {
     <style>
       @media screen { #printArea { display: none; } }
       @media print {
-        body * { visibility: hidden; }
-        #printArea, #printArea * { visibility: visible; }
+        /* FIX UTAMA: sembunyiin semua, jangan pake visibility */
+        body > *:not(#printArea) { display: none !important; }
         #printArea {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          background: white;
-          padding: 40px;
+          display: block !important;
+          position: static !important;
+          left: auto !important;
+          top: auto !important;
+          width: 100% !important;
+          background: white !important;
+          padding: 0 !important;
+          margin: 0 !important;
         }
-       .page-break { page-break-after: always; }
+        /* Hilangin header footer browser + GitHub */
+        @page {
+          margin: 2cm;
+          size: A4;
+        }
+        .page-break { page-break-after: always; }
+        .page-break:last-child { page-break-after: auto; }
       }
-     .kop-surat { height: 120px; margin-bottom: 20px; }
-     .font-judul1 { font-size: 18pt; }
-     .font-judul2 { font-size: 14pt; }
-     .font-judul3 { font-size: 13pt; }
-     .font-judul4 { font-size: 11pt; }
-     .font-no-surat { font-size: 12pt; }
-     .font-normal1 { font-size: 12pt; }
-     .font-normal2 { font-size: 11pt; }
-     .font-kecil { font-size: 10pt; }
-     .center { text-align: center; }
-     .title { font-weight: bold; text-decoration: underline; margin: 10px 0; }
-     .title1 { text-decoration: underline; margin: 10px 0; }
-      table { width: 100%; margin: 5px 0; border-collapse: collapse; }
-      td { padding: 1px 0; vertical-align: top; }
-     .label { width: 180px; }
+      .kop-surat { height: 100px; margin-bottom: 15px; }
+      .font-judul1 { font-size: 16pt; }
+      .font-judul2 { font-size: 14pt; }
+      .font-judul3 { font-size: 13pt; }
+      .font-judul4 { font-size: 11pt; }
+      .font-no-surat { font-size: 12pt; }
+      .font-normal1 { font-size: 12pt; }
+      .font-normal2 { font-size: 11pt; }
+      .font-kecil { font-size: 10pt; }
+      .center { text-align: center; }
+      .title { font-weight: bold; text-decoration: underline; margin: 8px 0; }
+      .title1 { text-decoration: underline; margin: 8px 0; }
+      table { width: 100%; margin: 4px 0; border-collapse: collapse; }
+      td { padding: 1px 0; vertical-align: top; line-height: 1.2; }
+      .label { width: 180px; }
     </style>
 
+    <!-- HALAMAN 1: SURAT TUGAS -->
     <div class="kop-surat"></div>
     <div class="center">
       <div class="title font-judul1">SURAT TUGAS</div>
       <div class="title1 font-judul3">PELAKSANAAN PENGURUSAN DOKUMEN DAN BARANG IMPOR/EKSPOR</div>
       <div class="font-no-surat">${data.noSurat}</div>
     </div>
-    <br><br>
+    <br>
     <div class="font-normal2">Kami yang bertanda tangan dibawah ini :</div>
     <table class="font-normal2">
       <tr><td class="label">Nama</td><td>: JUNUS JONAS</td></tr>
@@ -527,29 +536,30 @@ function printFormatSurat(data) {
     </table>
     <br>
     <div class="font-normal2">Demikianlah surat tugas ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya dan sebaik-baiknya. Atas bantuan dan kerjasamanya kami ucapkan terima kasih</div>
-    <br><br>
+    <br>
     <div style="text-align: left" class="font-normal2">Tangerang, ${tglPrint}</div>
     <table class="font-normal" style="width:100%;">
       <tr>
         <td style="width:50%; text-align:left; vertical-align:top;">
           Pemberi Tugas,
-          <div style="margin-top:100px; text-decoration:underline;">(JUNUS JONAS)</div>
+          <div style="margin-top:80px; text-decoration:underline;">(JUNUS JONAS)</div>
           <div>PPJK PT. LX Pantos Indonesia</div>
         </td>
         <td style="width:50%; text-align:center; vertical-align:top;">
           Penerima Tugas
-          <div style="margin-top:100px; text-decoration:underline;">( Operational )</div>
+          <div style="margin-top:80px; text-decoration:underline;">( Operational )</div>
           <div>&nbsp;</div>
         </td>
       </tr>
     </table>
     <div class="page-break"></div>
 
+    <!-- HALAMAN 2: SURAT KUASA -->
     <div class="kop-surat"></div>
     <div class="center">
       <div class="title font-judul2">SURAT KUASA</div>
     </div>
-    <br><br>
+    <br>
     <div class="font-normal1">
       Yang bertanda tangan dibawah ini :
       <br><br>
@@ -631,23 +641,24 @@ function printFormatSurat(data) {
         <tr>
           <td style="width:50%; text-align:left; vertical-align:top;">
             Penerima Kuasa
-            <div style="margin-top:120px; text-decoration:underline;">(JUNUS JONAS)</div>
+            <div style="margin-top:100px; text-decoration:underline;">(JUNUS JONAS)</div>
           </td>
           <td style="width:50%; text-align:center; vertical-align:top;">
             Pemberi Kuasa,<br>
             Divisi Ekspor – Impor
-            <div style="margin-top:100px; text-decoration:underline;">(MOCHAMAD EKO NUGROHO)</div>
+            <div style="margin-top:80px; text-decoration:underline;">(MOCHAMAD EKO NUGROHO)</div>
           </td>
         </tr>
       </table>
     </div>
     <div class="page-break"></div>
 
+    <!-- HALAMAN 3: SURAT PERNYATAAN -->
     <div class="kop-surat"></div>
     <div class="center">
       <div class="title font-judul4">SURAT PERNYATAAN</div>
     </div>
-    <br><br>
+    <br>
     <div class="font-kecil">Yang bertanda tangan dibawah :</div>
     <table class="font-kecil">
       <tr><td class="label">Nama</td><td>: MOCHAMAD EKO NUGROHO</td></tr>
@@ -677,7 +688,7 @@ function printFormatSurat(data) {
     <br>
     <div style="text-align: left" class="font-kecil">Tangerang, ${tglPrint}</div>
     <div style="text-align: left;" class="font-kecil">Hormat kami,</div>
-    <div style="text-align: left; margin-top: 100px; text-decoration: underline;" class="font-kecil">(MOCHAMAD EKO NUGROHO)</div>
+    <div style="text-align: left; margin-top: 80px; text-decoration: underline;" class="font-kecil">(MOCHAMAD EKO NUGROHO)</div>
   `;
 
   setTimeout(() => {
