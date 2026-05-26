@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dok Pendukung BC 23</title>
+<style>
+    * { box-sizing: border-box; }
+  body {
+    font-family: Arial, sans-serif;
+    padding: 0;
+    margin: 0;
+    background: #f5f5f5;
+  }
+  body.dark-mode { background: #1a1a1a; color: #eee; }
+  h1 {
+    text-align: center;
+    margin: 0;
+    padding: 20px 0 10px;
+  }
+  /* TOOLBAR FREEZE */
+ .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: #f5f5f5;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  body.dark-mode.toolbar {
+    background: #1a1a1a;
+    box-shadow: 0 2px 4px rgba(255,255,255,0.1);
+  }
+ .toolbar button {
+    padding: 8px 16px;
+    margin-right: 8px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+  }
+  body.dark-mode.toolbar button {
+    background: #333;
+    color: #eee;
+    border-color: #555;
+  }
+  #searchBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    width: 300px;
+    margin-left: 8px;
+  }
+  body.dark-mode #searchBox {
+    background: #333;
+    color: #eee;
+    border-color: #555;
+  }
+  tr.hide {
+    display: none;
+  }
+ .content-wrap {
+    padding: 20px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  body.dark-mode table { background: #2a2a2a; }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+  }
+  body.dark-mode th, body.dark-mode td { border-color: #444; }
+  th { background: #4a90e2; color: white; }
+
+  input[type="text"], input[type="date"] {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  input:disabled {
+    background: #f0f0f0;
+    color: #666;
+    cursor: not-allowed;
+  }
+  body.dark-mode input:disabled { background: #333; color: #999; }
+ .btn-action {
+    padding: 4px 8px;
+    margin: 0 2px;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+  }
+ .btn-edit { background: #ffc107; }
+ .btn-save { background: #28a745; color: white; }
+ .btn-print { background: #17a2b8; color: white; }
+  @media print {
+   .toolbar,.no-print { display: none!important; }
+    body { background: white; padding: 0; }
+    table { box-shadow: none; }
+   .content-wrap { padding: 0; }
+  }
+</style>
+</head>
+<body>
+<h1>Dok Pendukung BC 23</h1>
+<div class="toolbar no-print">
+  <button onclick="tambahBaris()">+ Tambah Data</button>
+  <button onclick="toggleDark()">Toggle Dark Mode</button>
+  <input type="text" id="searchBox" placeholder="Cari HBL, Party, Vessel..."
+         onkeyup="filterTable()">
+  <button onclick="resetFilter()">Reset</button>
+  <span style="margin-left:15px">Total: <span id="jumlahData">0</span></span>
+</div>
+<div class="content-wrap">
+<table id="tabelBC23">
+  <thead>
+    <tr>
+      <th>No Surat</th>
+      <th>No Aju</th>
+      <th>Tgl Aju</th>
+      <th>Mother Vessel</th>
+      <th>HBL No</th>
+      <th>MBL</th>
+      <th>Party</th>
+      <th>Jns Brg</th>
+      <th>Inv/PL</th>
+      <th class="no-print">Aksi</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwXm4NtKtyjTtj3zuF77VcvBxmX8IoBQiSn0HFg6h6IJ5xZXbHAbXUmAOERxfUR7qX1/exec';
+let dataSpreadsheet = [];
+let dataTabel = [];
+let lastNoSurat = 0;
+function filterTable() {
+  const keyword = document.getElementById('searchBox').value.toLowerCase().trim();
+  const rows = document.querySelectorAll('#tbody tr');
+  rows.forEach((tr, idx) => {
+    const rowData = dataTabel[idx];
+    if (!rowData) return;
+    const textGabungan = `
+      ${rowData.noSurat}
+      ${rowData.noAju}
+      ${rowData.tglAju}
+      ${rowData.motherVessel}
+      ${rowData.hblNo}
+      ${rowData.mbl}
+      ${rowData.party}
+      ${rowData.jnsBrg}
+      ${rowData.invPL}
+    `.toLowerCase();
+    if (textGabungan.includes(keyword)) {
+      tr.classList.remove('hide');
+    } else {
+      tr.classList.add('hide');
+    }
+  });
+}
+function resetFilter() {
+  document.getElementById('searchBox').value = '';
+  document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.remove('hide'));
+}
+window.onload = function() {
+  const keyBulan = `lastNoSuratBC23_${new Date().getMonth()}_${new Date().getFullYear()}`;
+  lastNoSurat = parseInt(localStorage.getItem(keyBulan) || '0');
+  // RESTORE SEARCH KALAU HABIS EDIT
+  let lastSearch = localStorage.getItem('lastSearchBC23');
+  if (lastSearch) {
+    document.getElementById('searchBox').value = lastSearch;
+    localStorage.removeItem('lastSearchBC23');
+  }
+  loadDataJSONP();
+}
+function loadDataJSONP() {
+  const script = document.createElement('script');
+  const callbackName = 'handleData_' + Date.now();
+  window[callbackName] = function(data) {
+    console.log('Data masuk:', data);
+    if (!data || data.error ||!Array.isArray(data)) {
+      alert('Gagal load data: ' + (data?.error || 'Data kosong'));
+      dataSpreadsheet = [];
+    } else {
+      dataSpreadsheet = data;
+    }
+    dataTabel = dataSpreadsheet.map((d, i) => ({
+      id: Date.now() + i,
+      noSurat: d.noSurat || '',
+      noAju: d.noAju || '',
+      tglAju: d.tglAju? d.tglAju.split('T')[0] : '',
+      motherVessel: d.motherVessel || '',
+      hblNo: d.hblNo || '',
+      mbl: d.mbl || '',
+      party: d.party || '',
+      jnsBrg: d.jnsBrg || '',
+      invPL: d.invPL || '',
+      isEditing: false
+    }));
+    renderTable();
+    document.getElementById('jumlahData').textContent = dataTabel.length;
+    // APPLY FILTER KALAU ADA SEARCH TERSIMPAN
+    if (document.getElementById('searchBox').value) {
+      filterTable();
+    }
+    document.body.removeChild(script);
+    delete window[callbackName];
+  };
+  script.src = API_URL + '?callback=' + callbackName;
+  document.body.appendChild(script);
+}
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  if (dataTabel.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center">Data kosong / gagal load</td></tr>';
+    return;
+  }
+  dataTabel.forEach((row, idx) => {
+    let tr = document.createElement('tr');
+    const punyaNoSurat =!!row.noSurat;
+    const disableNoAju = punyaNoSurat &&!row.isEditing;
+    const disableTglAju = punyaNoSurat &&!row.isEditing;
+    const disableJnsBrg = punyaNoSurat &&!row.isEditing;
+    const disableMotherVessel =!row.isEditing;
+    const disableHblNo =!row.isEditing;
+    const disableMbl =!row.isEditing;
+    const disableParty =!row.isEditing;
+    const disableInvPL =!row.isEditing;
+    tr.innerHTML = `
+      <td>${row.noSurat || '-'}</td>
+      <td><input type="text" value="${row.noAju}" ${disableNoAju? 'disabled' : ''}
+          onchange="updateData(${idx}, 'noAju', this.value)"></td>
+      <td><input type="date" value="${row.tglAju}" ${disableTglAju? 'disabled' : ''}
+          onchange="updateData(${idx}, 'tglAju', this.value)"></td>
+      <td><input type="text" value="${row.motherVessel}" ${disableMotherVessel? 'disabled' : ''}
+          onchange="updateData(${idx}, 'motherVessel', this.value)"></td>
+      <td><input type="text" value="${row.hblNo}" ${disableHblNo? 'disabled' : ''}
+          onchange="updateData(${idx}, 'hblNo', this.value)"></td>
+      <td><input type="text" value="${row.mbl}" ${disableMbl? 'disabled' : ''}
+          onchange="updateData(${idx}, 'mbl', this.value)"></td>
+      <td><input type="text" value="${row.party}" ${disableParty? 'disabled' : ''}
+          onchange="updateData(${idx}, 'party', this.value)"></td>
+      <td><input type="text" value="${row.jnsBrg}" ${disableJnsBrg? 'disabled' : ''}
+          onchange="updateData(${idx}, 'jnsBrg', this.value)"></td>
+      <td><input type="text" value="${row.invPL}" ${disableInvPL? 'disabled' : ''}
+          onchange="updateData(${idx}, 'invPL', this.value)"></td>
+      <td class="no-print">
+        ${row.isEditing
+       ? `<button class="btn-action btn-save" onclick="saveRow(${idx})">Save</button>`
+         : `<button class="btn-action btn-edit" onclick="editRow(${idx})">Edit</button>`
+        }
+        <button class="btn-action btn-print" onclick="printRow(${idx})">Print</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+function updateData(idx, field, value) {
+  dataTabel[idx][field] = value;
+}
+function editRow(idx) {
+  // SIMPEN KEYWORD SEARCH SEBELUM EDIT
+  let keyword = document.getElementById('searchBox').value;
+  if (keyword) {
+    localStorage.setItem('lastSearchBC23', keyword);
+  }
+  dataTabel[idx].isEditing = true;
+  renderTable();
+  filterTable(); // Tetap apply filter
+}
+function saveRow(idx) {
+  dataTabel[idx].isEditing = false;
+  renderTable();
+  filterTable();
+  // KIRIM KE SHEET
+  saveToSheetJSONP(idx);
+}
+function saveToSheetJSONP(idx) {
+  const row = dataTabel[idx];
+  const script = document.createElement('script');
+  const callbackName = 'saveCB_' + Date.now();
+  // Cek ini data baru atau edit: kalau noSurat kosong + hblNo ada = data baru
+  const isNewData =!row.noSurat && row.hblNo;
+  const action = isNewData? 'addRow' : 'updateData';
+  if (isNewData &&!row.hblNo) {
+    alert('HBL No wajib diisi untuk data baru!');
+    return;
+  }
+  window[callbackName] = function(res) {
+    if(res.success) {
+      alert(isNewData? 'Data baru berhasil ditambah!' : 'Data berhasil diupdate!');
+      loadDataJSONP(); // Reload data biar fresh
+    } else {
+      alert('Gagal: ' + res.error);
+    }
+    document.body.removeChild(script);
+    delete window[callbackName];
+  };
+  const params = new URLSearchParams({
+    action: action, // 'addRow' atau 'updateData'
+    hblNo: row.hblNo,
+    noAju: row.noAju,
+    tglAju: row.tglAju,
+    motherVessel: row.motherVessel,
+    mbl: row.mbl,
+    party: row.party,
+    jnsBrg: row.jnsBrg,
+    invPL: row.invPL,
+    callback: callbackName
+  });
+  script.src = `${API_URL}?${params.toString()}`;
+  document.body.appendChild(script);
+}
+function tambahBaris() {
+  dataTabel.push({
+    id: Date.now(),
+    noSurat: '',
+    noAju: '',
+    tglAju: '',
+    motherVessel: '',
+    hblNo: '',
+    mbl: '',
+    party: '',
+    jnsBrg: '',
+    invPL: '',
+    isEditing: true
+  });
+  renderTable();
+  document.getElementById('jumlahData').textContent = dataTabel.length;
+}
+function saveNoSuratJSONP(hblNo, noSurat) {
+  const script = document.createElement('script');
+  const callbackName = 'saveCB_' + Date.now();
+  window[callbackName] = function(res) {
+    console.log('No surat saved ke Sheet:', res);
+    document.body.removeChild(script);
+    delete window[callbackName];
+  };
+  script.src = `${API_URL}?action=saveNoSurat&hblNo=${encodeURIComponent(hblNo)}&noSurat=${encodeURIComponent(noSurat)}&callback=${callbackName}`;
+  document.body.appendChild(script);
+}
+function getRomanMonth() {
+  const romawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+  const bulan = new Date().getMonth();
+  return romawi[bulan];
+}
+async function printRow(idx) {
+  if (!dataTabel[idx].noSurat) {
+    lastNoSurat++;
+    const tahun = new Date().getFullYear();
+    const bulanRomawi = getRomanMonth();
+    let noSuratBaru = `No: ${String(lastNoSurat).padStart(3, '0')}/${bulanRomawi}/${tahun}/FACT2/S-IMP/PANTOS`;
+
+    dataTabel[idx].noSurat = noSuratBaru;
+    const keyBulan = `lastNoSuratBC23_${new Date().getMonth()}_${new Date().getFullYear()}`;
+    localStorage.setItem(keyBulan, lastNoSurat);
+    saveNoSuratJSONP(dataTabel[idx].hblNo, noSuratBaru);
+    renderTable();
+    filterTable();
+  }
+  printFormatSurat(dataTabel[idx]);
+}
+function formatTglAju(tgl) {
+  if (!tgl) return '00000000';
+  let date;
+  if (tgl instanceof Date) {
+    date = tgl;
+  } else if (typeof tgl === 'string') {
+    if (tgl.includes('-')) {
+      date = new Date(tgl);
+    } else if (tgl.includes('/')) {
+      let parts = tgl.split('/');
+      date = new Date(parts[2], parts[1] - 1, parts[0]);
+    } else {
+      date = new Date(tgl);
+    }
+  } else {
+    return '00000000';
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+}
+function printFormatSurat(data) {
+  const tglPrint = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+  let win = window.open('', '_blank');
+  win.document.write(`
+    <html>
+    <head>
+      <title>Print Dokumen - ${data.noSurat}</title>
+      <style>
+        body {
+          font-family: 'Times New Roman', serif;
+          padding: 40px;
+          line-height: 1;
+        }
+       .kop-surat {
+          height: 120px;
+          margin-bottom: 20px;
+        }
+       .font-judul1 { font-size: 18pt; }
+       .font-judul2 { font-size: 14pt; }
+       .font-judul3 { font-size: 13pt; }
+       .font-judul4 { font-size: 11pt; }
+       .font-no-surat { font-size: 12pt; }
+       .font-normal1 { font-size: 12pt; }
+       .font-normal2 { font-size: 11pt; }
+       .font-kecil { font-size: 10pt; }
+       .page-break { page-break-after: always; }
+       .center { text-align: center; }
+       .title {
+          font-weight: bold;
+          text-decoration: underline;
+          margin: 10px 0;
+        }
+       .title1 {
+          text-decoration: underline;
+          margin: 10px 0;
+        }
+        table {
+          width: 100%;
+          margin: 5px 0;
+          border-collapse: collapse;
+        }
+        td {
+          padding: 1px 0;
+          vertical-align: top;
+        }
+       .label { width: 180px; }
+        @media print {
+         .no-print { display: none; }
+          body { padding: 20px; }
+        }
+      </style>
+    </head>
+    <body class="font-normal">
+      <!-- HALAMAN 1: SURAT TUGAS -->
+      <div class="kop-surat"></div>
+      <div class="center">
+        <div class="title font-judul1">SURAT TUGAS</div>
+        <div class="title1 font-judul3">PELAKSANAAN PENGURUSAN DOKUMEN DAN BARANG IMPOR/EKSPOR</div>
+        <div class="font-no-surat">${data.noSurat}</div>
+      </div>
+      <br><br>
+      <div class="font-normal2">Kami yang bertanda tangan dibawah ini :</div>
+      <table class="font-normal2">
+        <tr><td class="label">Nama</td><td>: JUNUS JONAS</td></tr>
+        <tr><td class="label">PPJK</td><td>: PT. LX PANTOS INDONESIA</td></tr>
+        <tr><td class="label">No. Sertifikat PPJK</td><td>: 6004/DAK/BC/2010</td></tr>
+        <tr><td class="label">Alamat</td><td>: KAWASAN INDUSTRI MM2100 BLOK G-1 CIKARANG<br>&nbsp;&nbsp;BARAT, BEKASI - 17520</td></tr>
+      </table>
+      <br>
+      <div class="font-normal2">Adalah sebagai Pihak Pertama yang mana memberi tugas kepada :</div>
+      <table class="font-normal2">
+        <tr><td class="label">Nama</td><td>: DJUNAEDI</td></tr>
+        <tr><td class="label">Jabatan</td><td>: Operational</td></tr>
+        <tr><td class="label">Perusahaan</td><td>: PT. LX PANTOS INDONESIA</td></tr>
+      </table>
+      <br>
+      <div class="font-normal2">Akan melaksanakan pengurusan dan / atau pada kantor pelayanan bea dan cukai yang bersangkutan atas impor / ekspor barang tersebut dibawah ini :</div>
+      <table class="font-normal2">
+        <tr><td class="label">Mother Vessel</td><td>: ${data.motherVessel || '-'}</td></tr>
+        <tr><td class="label">M B/L No.</td><td>: ${data.mbl || '-'}</td></tr>
+        <tr><td class="label">HBL</td><td>: ${data.hblNo || '-'}</td></tr>
+        <tr><td class="label">Party</td><td>: ${data.party || '-'}</td></tr>
+        <tr><td class="label">Jenis Barang</td><td>: ${data.jnsBrg || '-'}</td></tr>
+        <tr><td class="label">Nama Importir/Eksportir</td><td>: PT. LG Electronics Indonesia</td></tr>
+        <tr><td class="label">No Dok BC2.3 & Tanggal</td><td>: 150323-029551-${formatTglAju(data.tglAju)}-${String(data.noAju || '0').padStart(6, '0')} Tanggal ${data.tglAju || '-'} </td></tr>
+      </table>
+      <br>
+      <div class="font-normal2">Demikianlah surat tugas ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya dan sebaik-baiknya. Atas bantuan dan kerjasamanya kami ucapkan terima kasih</div>
+      <br>
+      <br>
+      <div style="text-align: left" class="font-normal2">Tangerang, ${tglPrint}</div>
+      <table class="font-normal" style="width:100%;">
+        <tr>
+          <td style="width:50%; text-align:left; vertical-align:top;">
+            Pemberi Tugas,
+            <div style="margin-top:100px; text-decoration:underline;">(JUNUS JONAS)</div>
+            <div>PPJK PT. LX Pantos Indonesia</div>
+          </td>
+          <td style="width:50%; text-align:center; vertical-align:top;">
+            Penerima Tugas
+            <div style="margin-top:100px; text-decoration:underline;">( Operational )</div>
+            <div>&nbsp;</div>
+          </td>
+        </tr>
+      </table>
+      <div class="page-break"></div>
+      <!-- HALAMAN 2: SURAT KUASA -->
+      <div class="kop-surat"></div>
+      <div class="center">
+        <div class="title font-judul2">SURAT KUASA</div>
+      </div>
+      <br><br>
+      <div class="font-normal1">
+        <div class="font-normal">
+          Yang bertanda tangan dibawah ini :
+          <br><br>
+          <table class="font-normal" style="margin-left:0">
+            <tr>
+              <td style="width: 20px; vertical-align: top;">1.</td>
+              <td style="width: 80px;">Nama</td>
+              <td style="width: 10px;">:</td>
+              <td>MOCHAMAD EKO NUGROHO</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>Alamat</td>
+              <td>:</td>
+              <td>PT. LG Electronics Indonesia</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>Jl.H Tabri No 1. Ds Cirarab Legok Tangerang Banten</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>Indonesia.</td>
+            </tr>
+          </table>
+          <br>
+          Selanjutnya disebut Pihak Pertama ( I ).
+          <br><br>
+          <table class="font-normal" style="margin-left:0">
+            <tr>
+              <td style="width: 20px; vertical-align: top;">2.</td>
+              <td style="width: 80px;">Nama</td>
+              <td style="width: 10px;">:</td>
+              <td>JUNUS JONAS</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>Jabatan</td>
+              <td>:</td>
+              <td>PPJK PT. LX Pantos Indonesia</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td>Alamat</td>
+              <td>:</td>
+              <td>PT. LX Pantos Indonesia</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>Kawasan Industri MM2100 Blok G-1</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>Ganda Mekar, Cikarang Barat Bekasi 17520 Indonesia</td>
+            </tr>
+          </table>
+          <br>
+          Selanjutnya disebut Pihak Kedua ( II ).
+        </div>
+        <br>
+        <div class="font-normal1">Dengan ini pihak pertama memberi kuasa kepada pihak kedua untuk menyelesaikan pengurusan kepabeanan atas barang import, dengan data sebagai berikut :</div>
+        <table class="font-normal1">
+          <tr><td class="label">Jenis Barang</td><td>: ${data.jnsBrg || '-'}</td></tr>
+          <tr><td class="label">No.MBL/HBL</td><td>: ${data.mbl || '-'} / ${data.hblNo || '-'}</td></tr>
+          <tr><td class="label">Invoice/Packing List</td><td>: ${data.invPL || '-'}</td></tr>
+        </table>
+        <br>
+        <div class="font-normal1">Demikian Surat Kuasa ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya, dengan ketentuan bila terdapat pelanggaran kepabeanan dalam pemasukan barang dan dokumen impor tersebut, maka pihak pertama bertanggungjawab atas segala akibat hukum yang timbul sesuai dengan perundangan yang berlaku.</div>
+        <br>
+        <br>
+        <div style="text-align: left" class="font-normal1">Tangerang, ${tglPrint}</div>
+        <table class="font-normal1" style="width:100%; border:0;">
+          <tr>
+            <td style="width:50%; text-align:left; vertical-align:top;">
+              Penerima Kuasa
+              <div style="margin-top:120px; text-decoration:underline;">(JUNUS JONAS)</div>
+            </td>
+            <td style="width:50%; text-align:center; vertical-align:top;">
+              Pemberi Kuasa,<br>
+              Divisi Ekspor – Impor
+              <div style="margin-top:100px; text-decoration:underline;">(MOCHAMAD EKO NUGROHO)</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="page-break"></div>
+      <!-- HALAMAN 3: SURAT PERNYATAAN -->
+      <div class="kop-surat"></div>
+      <div class="center">
+        <div class="title font-judul4">SURAT PERNYATAAN</div>
+      </div>
+      <br><br>
+      <div class="font-kecil">Yang bertanda tangan dibawah :</div>
+      <table class="font-kecil">
+        <tr><td class="label">Nama</td><td>: MOCHAMAD EKO NUGROHO</td></tr>
+        <tr><td class="label">Jabatan</td><td>: Kuasa Direksi</td></tr>
+      </table>
+      <br>
+      <div class="font-kecil">Berdasarkan Akta Notaris nomor 10 tahun 1999 yang dibuat dihadapan Refizal, SH Notaris di Jakarta sesuai Menkeh No. C-155 97 HT-01-04 Th. 1999. tgl 08/6/1999, dalam hal ini bertindak untuk dan atas nama :</div>
+      <table class="font-kecil">
+        <tr><td class="label">Nama Perusahaan</td><td>: PT. LG Electronics Indonesia</td></tr>
+        <tr><td class="label">NPWP</td><td>: 01.069.323.2-092.000</td></tr>
+        <tr><td class="label">Alamat</td><td>: Gandaria 8 office tower lt. 29 BC & 31 ABCD,</td></tr>
+        <tr><td></td><td>&nbsp;&nbsp;Jl. Sultan iskandar muda, Kebayoran Lama Utara,</td></tr>
+        <tr><td></td><td>&nbsp;&nbsp;Kebayoran Lama,Jakarta Selatan.</td></tr>
+      </table>
+      <br>
+      <div class="font-kecil">Sehubungan dengan kewajiban untuk menyerahkan Asli Dokumen Pelengkap Pabean sebagaimana diatur dalam Keputusan Direktur Jenderal Bea dan Cukai Nomor KEP-07/BC/2003 tentang Petunjuk Pelaksanaan Tatalaksana Kepabeanan di bidang Import sebagaimana telah diu bah dengan keputusan Direktur Jenderal Bea dan Cukai Nomor KEP-68/BC/2003, menyatakan dan menjamin kebenaran hal-hal sebagai berikut :</div>
+      <div class="font-kecil">1. &nbsp;&nbsp;Bahwa dalam melakukan kegiatan import, terdapat dokumen Invoice, Packing List ${data.invPL || '-'}, Bill of Lading ${data.hblNo || '-'} dikeluarkan oleh pihak-pihak yang berwenang mengeluar kan dokumen tersebut yang dikirim melalui mdia elektronik dan dicetak oleh PT. LG Electronics Indonesia.</div>
+      <div class="font-kecil">2. &nbsp;&nbsp;Dokumen sebagaimana dimaksud dalam butir 1 yang diberitahukan oleh PT. LG Electronics Indonesia sebagai dokumen pelengkap Pabean.</div>
+      <div class="font-kecil" style="margin-left: 20px">a. &nbsp;&nbsp;Bukan merupakan dokumen yang dihasilkan dari mesin fotocopy atau faksimili</div>
+      <div class="font-kecil" style="margin-left: 20px">b. &nbsp;&nbsp;Merupakan dokumen resmi perusahaan yang diakui kebenarannya dan mengikat baik secara administrative maupun hukum antara PT. LG Electronics Indonesia dengan pihak yang mengeluarkan dokumen.</div>
+      <div class="font-kecil" style="margin-left: 20px">c. &nbsp;&nbsp;Diakui sebagai dokumen asli sebagaimana disyaratkan dalam lampiran II, III, dan IV KEP-07/BC/2003 apabila telah ditandai/dibubuhi stempel 'ASLI' disertai stempel perusahaan PT. LG Electronics Indonesia.</div>
+      <div class="font-kecil" style="margin-left: 20px">d. &nbsp;&nbsp;Merupakan alat bukti yang sah dalam proses peradilan di seluruh wilayah hukum Republik Indonesia dalam hal terjadi proses hukum antara Direktorat Jenderal Bea dan Cukai dan PT. LG Electronics Indonesia.</div>
+      <br>
+      <div class="font-kecil">Surat pernyataan ini berlaku sejak tanggal yang tertera dalam Surat Pernyataan ini dan berakhir pada saat PT. LG Electronics Indonesia mengadakan perubahan / pencabutan atas Surat Pernyataan ini.</div>
+      <br>
+      <div class="font-kecil">Demikian surat pernyataan ini dibuat dan diserahkan secara terpusat kepada Direktur Jenderal Bea dan Cukai u.b. Direktur Teknis Kepabeanan Direktorat Jenderal Bea dan Cukai berlaku di seluruh wilayah Negara Republik Indonesia (Kepada Kepala Kantor Pelayanan Bea dan Cukai KPU Tanjung Priok) untuk dipergunakan sebagaimana mestinya.</div>
+      <br>
+      <div style="text-align: left" class="font-kecil">Tangerang, ${tglPrint}</div>
+      <div style="text-align: left;" class="font-kecil">Hormat kami,</div>
+      <div style="text-align: left; margin-top: 100px; text-decoration: underline;" class="font-kecil">(MOCHAMAD EKO NUGROHO)</div>
+      <button class="no-print" onclick="window.print()" style="margin-top:30px;padding:10px 20px">Print Semua Dokumen</button>
+    </body>
+    </html>
+  `);
+  win.document.close();
+}
+function toggleDark() {
+  document.body.classList.toggle('dark-mode');
+}
+</script>
+</body>
+</html>
