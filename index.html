@@ -149,7 +149,6 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwXm4NtKtyjTtj3zuF77VcvBxmX8IoBQiSn0HFg6h6IJ5xZXbHAbXUmAOERxfUR7qX1/exec';
 let dataSpreadsheet = [];
 let dataTabel = [];
-let lastNoSurat = 0;
 
 function filterTable() {
   const keyword = document.getElementById('searchBox').value.toLowerCase().trim();
@@ -185,9 +184,6 @@ function resetFilter() {
 }
 
 window.onload = function() {
-  const keyBulan = `lastNoSuratBC23_${new Date().getMonth()}_${new Date().getFullYear()}`;
-  lastNoSurat = parseInt(localStorage.getItem(keyBulan) || '0');
-
   let lastSearch = localStorage.getItem('lastSearchBC23');
   if (lastSearch) {
     document.getElementById('searchBox').value = lastSearch;
@@ -408,20 +404,48 @@ function getRomanMonth() {
 }
 
 async function printRow(idx) {
-  if (!dataTabel[idx].noSurat) {
-    lastNoSurat++;
+  if (dataTabel[idx].noSurat) {
+    printFormatSurat(dataTabel[idx]);
+    return;
+  }
+
+  document.body.style.cursor = 'wait';
+  const script = document.createElement('script');
+  const callbackName = 'noSuratCB_' + Date.now();
+
+  window[callbackName] = function(res) {
+    document.body.style.cursor = 'default';
+
+    if (!res.no) {
+      alert('Gagal ambil nomor surat dari server');
+      return;
+    }
+
     const tahun = new Date().getFullYear();
     const bulanRomawi = getRomanMonth();
-    let noSuratBaru = `No: ${String(lastNoSurat).padStart(3, '0')}/${bulanRomawi}/${tahun}/FACT2/S-IMP/PANTOS`;
+    let noSuratBaru = `No: ${res.formatted}/${bulanRomawi}/${tahun}/FACT2/S-IMP/PANTOS`;
 
     dataTabel[idx].noSurat = noSuratBaru;
-    const keyBulan = `lastNoSuratBC23_${new Date().getMonth()}_${new Date().getFullYear()}`;
-    localStorage.setItem(keyBulan, lastNoSurat);
+
     saveNoSuratJSONP(dataTabel[idx].hblNo, noSuratBaru);
     renderTable();
     filterTable();
-  }
-  printFormatSurat(dataTabel[idx]);
+
+    setTimeout(() => {
+      printFormatSurat(dataTabel[idx]);
+    }, 300);
+
+    document.body.removeChild(script);
+    delete window[callbackName];
+  };
+
+  script.src = `${API_URL}?action=getNextNo&callback=${callbackName}`;
+  script.onerror = () => {
+    document.body.style.cursor = 'default';
+    alert('Gagal konek ke server buat ambil nomor');
+    delete window[callbackName];
+  };
+  document.body.appendChild(script);
 }
 
 function formatTglAju(tgl) {
