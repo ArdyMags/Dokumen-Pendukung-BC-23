@@ -28,7 +28,7 @@
     margin-bottom: 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
-  body.dark-mode.toolbar {
+  body.dark-mode .toolbar {
     background: #1a1a1a;
     box-shadow: 0 2px 4px rgba(255,255,255,0.1);
   }
@@ -41,7 +41,7 @@
     border-radius: 4px;
     background: #fff;
   }
-  body.dark-mode.toolbar button {
+  body.dark-mode .toolbar button {
     background: #333;
     color: #eee;
     border-color: #555;
@@ -385,64 +385,45 @@ function tambahBaris() {
   document.getElementById('jumlahData').textContent = dataTabel.length;
 }
 
-function saveNoSuratJSONP(hblNo, noSurat) {
-  const script = document.createElement('script');
-  const callbackName = 'saveCB_' + Date.now();
-  window[callbackName] = function(res) {
-    console.log('No surat saved ke Sheet:', res);
-    document.body.removeChild(script);
-    delete window[callbackName];
-  };
-  script.src = `${API_URL}?action=saveNoSurat&hblNo=${encodeURIComponent(hblNo)}&noSurat=${encodeURIComponent(noSurat)}&callback=${callbackName}`;
-  document.body.appendChild(script);
-}
-
 function getRomanMonth() {
   const romawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
   const bulan = new Date().getMonth();
   return romawi[bulan];
 }
 
-async function printRow(idx) {
-  if (dataTabel[idx].noSurat) {
-    printFormatSurat(dataTabel[idx]);
-    return;
-  }
+function printRow(idx) { // Ganti dari hblNo jadi idx
+  const d = dataTabel[idx];
+  if (!d ||!d.hblNo) return alert('HBL No kosong');
 
   document.body.style.cursor = 'wait';
+
+  // Panggil saveNoSurat, dia yg generate + simpen nomornya
   const script = document.createElement('script');
-  const callbackName = 'noSuratCB_' + Date.now();
+  const callbackName = 'printCB_' + Date.now();
 
   window[callbackName] = function(res) {
     document.body.style.cursor = 'default';
+    if (res.error) return alert('Gagal: ' + res.error);
 
-    if (!res.no) {
-      alert('Gagal ambil nomor surat dari server');
-      return;
-    }
-
-    const tahun = new Date().getFullYear();
-    const bulanRomawi = getRomanMonth();
-    let noSuratBaru = `No: ${res.formatted}/${bulanRomawi}/${tahun}/FACT2/S-IMP/PANTOS`;
-
-    dataTabel[idx].noSurat = noSuratBaru;
-
-    saveNoSuratJSONP(dataTabel[idx].hblNo, noSuratBaru);
+    // Update data di tabel biar ga perlu refresh
+    dataTabel[idx].noSurat = res.noSurat;
     renderTable();
-    filterTable();
+    filterTable(); // Biar filter tetep jalan
 
-    setTimeout(() => {
-      printFormatSurat(dataTabel[idx]);
-    }, 300);
+    if(res.isNew) console.log('No Surat baru dibuat: ' + res.noSurat);
+    else console.log('HBL ini sudah punya No Surat: ' + res.noSurat);
+
+    // Lanjut print
+    printFormatSurat({...d, noSurat: res.noSurat});
 
     document.body.removeChild(script);
     delete window[callbackName];
   };
 
-  script.src = `${API_URL}?action=getNextNo&callback=${callbackName}`;
+  script.src = `${API_URL}?action=saveNoSurat&hblNo=${encodeURIComponent(d.hblNo)}&callback=${callbackName}`;
   script.onerror = () => {
     document.body.style.cursor = 'default';
-    alert('Gagal konek ke server buat ambil nomor');
+    alert('Gagal konek ke server');
     delete window[callbackName];
   };
   document.body.appendChild(script);
