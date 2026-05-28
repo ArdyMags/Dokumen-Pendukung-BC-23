@@ -592,7 +592,7 @@ function printFormatSurat(data) {
     <div class="font-normal1">
       Yang bertanda tangan dibawah ini :
       <br><br>
-      <table class="font-normal1" style="margin-left:0">
+      <table class="font-normal" style="margin-left:0">
         <tr>
           <td style="width: 20px; vertical-align: top;">1.</td>
           <td style="width: 80px;">Nama</td>
@@ -657,7 +657,7 @@ function printFormatSurat(data) {
       Selanjutnya disebut Pihak Kedua ( II ).
       <br><br>
       Dengan ini pihak pertama memberi kuasa kepada pihak kedua untuk menyelesaikan pengurusan kepabeanan atas barang import, dengan data sebagai berikut :
-      <table class="font-normal1">
+      <table class="font-normal">
         <tr><td class="label">Jenis Barang</td><td>: ${data.jnsBrg || '-'}</td></tr>
         <tr><td class="label">No.MBL/HBL</td><td>: ${data.mbl || '-'} / ${data.hblNo || '-'}</td></tr>
         <tr><td class="label">Invoice/Packing List</td><td>: ${data.invPL || '-'}</td></tr>
@@ -666,7 +666,7 @@ function printFormatSurat(data) {
       Demikian Surat Kuasa ini kami buat dengan sebenarnya untuk dapat dipergunakan seperlunya, dengan ketentuan bila terdapat pelanggaran kepabeanan dalam pemasukan barang dan dokumen impor tersebut, maka pihak pertama bertanggungjawab atas segala akibat hukum yang timbul sesuai dengan perundangan yang berlaku.
       <br><br>
       <div style="text-align: left" class="font-normal1">Tangerang, ${tglPrint}</div>
-      <table class="font-normal1" style="width:100%; border:0;">
+      <table class="font-normal" style="width:100%; border:0;">
         <tr>
           <td style="width:50%; text-align:left; vertical-align:top;">
             Penerima Kuasa
